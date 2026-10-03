@@ -54,7 +54,7 @@ git clone https://github.com/pedro-ops-beep/news-aggregator.git
 cd news-aggregator
 
 # 2. Add your API keys
-cp .env.example .env
+cp .env.example .env          # Windows cmd: copy .env.example .env
 #    then edit .env:
 #    NEWSAPI_KEY=...
 #    GUARDIAN_API_KEY=...
@@ -68,6 +68,16 @@ open http://localhost:8080        # or just visit it in your browser
 ```
 
 Stop it with `docker compose down`.
+
+**First run vs. every run.** Steps 1–2 are a **one-time setup on each new machine**: `.env` holds your secret keys, so it is never committed and every clone needs its own. After that:
+
+| When                                  | Command                                                         |
+| ------------------------------------- | --------------------------------------------------------------- |
+| First start, or after pulling changes | `docker compose up --build`                                     |
+| Every other start                     | `docker compose up` (reuses the built image, starts in seconds) |
+| Stop                                  | `Ctrl+C`, or `docker compose down`                              |
+
+With Docker you never need Node.js or `npm install` on the host. Dependencies are installed inside the image.
 
 <details>
 <summary>Without Docker Compose (plain <code>docker</code>)</summary>
@@ -99,10 +109,15 @@ docker stop newsroom && docker rm newsroom
 Requires Node.js **22.22+** (24 LTS recommended).
 
 ```bash
-npm install
-cp .env.example .env   # add your keys
-npm run dev            # http://localhost:5173
+# One-time setup on each new machine (after cloning)
+npm install                     # installs dependencies into node_modules/
+cp .env.example .env            # Windows cmd: copy .env.example .env, then add your keys
+
+# Every time you want to run the app
+npm run dev                     # http://localhost:5173
 ```
+
+`node_modules/` and `.env` are intentionally not in the repository, so every fresh clone needs the one-time setup. Run `npm install` again only after pulling changes to `package.json`.
 
 The Vite dev server uses the **same `/api/*` proxy** as nginx (see `vite.config.ts`), so the app code is identical in development and production.
 
@@ -114,6 +129,17 @@ The Vite dev server uses the **same `/api/*` proxy** as nginx (see `vite.config.
 | `npm test`                           | Run the Vitest suite once                               |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript                                     |
 | `npm run format`                     | Prettier (with Tailwind class sorting)                  |
+
+### Troubleshooting
+
+| Symptom                                                  | Fix                                                                                                                         |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `'vite' is not recognized…` / `vite: command not found`  | Dependencies aren't installed yet. Run `npm install` first.                                                                 |
+| `npm install` fails with an engine/version error         | Install Node.js 22.22+ (24 LTS recommended) from <https://nodejs.org>, then reopen the terminal.                            |
+| "Connect your news sources" screen                       | `.env` is missing or a key is wrong. Check there are no quotes or spaces, then restart `npm run dev` / `docker compose up`. |
+| One source shows "API key is missing or invalid"         | That key was mistyped or isn't active yet. NYT keys need the **Article Search API** enabled and can take a few minutes.     |
+| `port is already allocated` (Docker) or port 5173 in use | Stop the other app, or change `'8080:80'` in `docker-compose.yml` to e.g. `'3000:80'`.                                      |
+| Docker build fails on Windows                            | Make sure Docker Desktop is running and uses **Linux containers** (the default).                                            |
 
 ---
 
