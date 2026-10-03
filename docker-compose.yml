@@ -1,0 +1,12 @@
+services:
+  web:
+    build: .
+    image: newsroom:latest
+    container_name: newsroom
+    ports:
+      - '8080:80'
+    environment:
+      NEWSAPI_KEY: ${NEWSAPI_KEY:-}
+      GUARDIAN_API_KEY: ${GUARDIAN_API_KEY:-}
+      NYT_API_KEY: ${NYT_API_KEY:-}
+    restart: unless-stopped

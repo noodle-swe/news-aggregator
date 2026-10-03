@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    name: Docker image smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t newsroom:ci .
+      - name: Start container (with dummy keys)
+        run: |
+          docker run -d --name newsroom -p 8080:80 \
+            -e NEWSAPI_KEY=dummy -e GUARDIAN_API_KEY=dummy -e NYT_API_KEY=dummy newsroom:ci
+          for i in $(seq 1 20); do curl -fs http://localhost:8080/ >/dev/null && break; sleep 1; done
+      - name: Serves the SPA (including client-side routes)
+        run: |
+          curl -fs http://localhost:8080/ | grep -q '<div id="root">'
+          curl -fs http://localhost:8080/explore | grep -q '<div id="root">'
+      - name: Proxies reach the providers (401 = request arrived with our dummy key)
+        run: |
+          for path in "newsapi/v2/top-headlines?country=us" "guardian/search?q=test" "nyt/svc/search/v2/articlesearch.json?q=test"; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080/api/$path")
+            echo "/api/$path -> $code"
+            case "$code" in 200|400|401|403|429) ;; *) exit 1 ;; esac
+          done
+      - name: API keys are not in the bundle
+        run: |
+          ! docker exec newsroom sh -c 'grep -rl "dummy" /usr/share/nginx/html'
+      - name: Container logs
+        if: always()
+        run: docker logs newsroom

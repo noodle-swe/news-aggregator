@@ -1,0 +1,52 @@
+# Rendered at container start by the official nginx image: ${VARS} below are
+# replaced with environment variables (see NGINX_ENVSUBST_FILTER in the Dockerfile),
+# so API keys are injected at runtime and never baked into the JS bundle.
+
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    # Fingerprinted build assets never change — cache them for a year.
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # SPA fallback: client-side routes resolve to index.html (never cached).
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri $uri/ /index.html;
+    }
+
+    # ---- News API reverse proxies -------------------------------------------
+    location /api/newsapi/ {
+        include /etc/nginx/snippets/proxy-common.conf;
+        proxy_set_header Host newsapi.org;
+        proxy_set_header X-Api-Key "${NEWSAPI_KEY}";
+        proxy_pass https://newsapi.org/;
+    }
+
+    location /api/guardian/ {
+        # A rewrite that adds query args appends the original args after them.
+        rewrite ^/api/guardian/(.*)$ /$1?api-key=${GUARDIAN_API_KEY} break;
+        include /etc/nginx/snippets/proxy-common.conf;
+        proxy_set_header Host content.guardianapis.com;
+        proxy_pass https://content.guardianapis.com;
+    }
+
+    location /api/nyt/ {
+        rewrite ^/api/nyt/(.*)$ /$1?api-key=${NYT_API_KEY} break;
+        include /etc/nginx/snippets/proxy-common.conf;
+        proxy_set_header Host api.nytimes.com;
+        proxy_pass https://api.nytimes.com;
+    }
+}
