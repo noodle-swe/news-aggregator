@@ -1,0 +1,140 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens. Components only use semantic names (bg-surface, text-ink-muted…),
+ * so light/dark themes are swapped here without touching a single component.
+ */
+:root {
+  --paper: #faf9f6;
+  --surface: #ffffff;
+  --surface-sunken: #f2f0eb;
+  --ink: #16181d;
+  --ink-muted: #5a606b;
+  --ink-subtle: #6b7079;
+  --line: #e6e3dc;
+  --line-strong: #d3cfc6;
+  --accent: #b42318;
+  --accent-hover: #912018;
+  --accent-ink: #ffffff;
+  --accent-soft: #fdecea;
+  --warning-soft: #fef6e7;
+  --warning-ink: #8a4b08;
+  --source-newsapi: #d97706;
+  --source-guardian: #1d4ed8;
+  --source-nyt: #16181d;
+}
+
+.dark {
+  --paper: #0e1013;
+  --surface: #16191e;
+  --surface-sunken: #1c2026;
+  --ink: #eceef1;
+  --ink-muted: #a3a9b4;
+  --ink-subtle: #8a909b;
+  --line: #262a31;
+  --line-strong: #353a43;
+  --accent: #f97066;
+  --accent-hover: #fda29b;
+  --accent-ink: #1a0a08;
+  --accent-soft: #2a1513;
+  --warning-soft: #2a2010;
+  --warning-ink: #fbbf5b;
+  --source-newsapi: #fbbf24;
+  --source-guardian: #60a5fa;
+  --source-nyt: #eceef1;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
+  --color-source-newsapi: var(--source-newsapi);
+  --color-source-guardian: var(--source-guardian);
+  --color-source-nyt: var(--source-nyt);
+
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Newsreader Variable', ui-serif, Georgia, 'Times New Roman', serif;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    transition: background-color 200ms ease;
+  }
+
+  ::selection {
+    @apply bg-accent text-accent-ink;
+  }
+
+  :focus-visible {
+    @apply outline-accent outline-2 outline-offset-2;
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Native <dialog> backdrop used by the filter sheet. */
+  dialog::backdrop {
+    background: rgb(0 0 0 / 0.45);
+    backdrop-filter: blur(2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@theme {
+  --animate-sheet-in: sheet-in 260ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-fade-in: fade-in 320ms ease-out both;
+}
